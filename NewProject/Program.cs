@@ -3755,7 +3755,7 @@ namespace Decoder
             int ModelPoristostb = 0; // модель пористости (4)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
             // определяющие параметры используемы при счёте
-            int model = 13;
+            int model = 20;
             // тип граничных условий
             int typeGrandIF = 1;
             //Тип нагрузки
