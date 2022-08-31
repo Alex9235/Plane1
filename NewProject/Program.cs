@@ -4074,7 +4074,7 @@ namespace Decoder
                     alf = 0.000017; //коэффициент линейного температурного расширения
                     plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    plast.InicializationTempature("тем_500.txt", alf);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/тем_500.txt", alf);
                     break;
                 default: break;
 
