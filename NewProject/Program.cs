@@ -4046,6 +4046,19 @@ namespace Decoder
                     Poristostb = 0.4;
                     ModelPoristostb = 3;
                     break;
+                case 20:
+                    //steel T=300;
+                    // для экспоненциального!!!
+                    G0 = 74996;//коэффициент модуля сдвига для сжатия
+                    sigmas = 630.642;
+                    es = 0.002803;
+                    nu = 0.3;// коэффициент Пуассона
+                    QTemp = 300; //Температурная нагрузка
+                    alf = 0.000017; //коэффициент линейного температурного расширения
+                    plast.InicializationPlast(nu, G0);
+                    plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    plast.InicializationTempature("тем_500.txt", alf);
+                    break;
                 default: break;
 
             }
