@@ -334,7 +334,7 @@ namespace Decoder
             }  
             public void InicializationTempature(String puth, double alf)
             {
-                //
+                // 
                 if (FlagСurvilinearPlane)
                 {
                     ErrorEnterConstructorParametrs();
@@ -349,14 +349,31 @@ namespace Decoder
 
                 this.FlagTemperatureProblem = true;
                 this.alf = alf;
+                double r = alf * lam1 * lam1;
+
                 System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
                 FileStream file1 = new FileStream(puth, FileMode.Open); //создаем файловый поток
                 StreamReader reader = new StreamReader(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
-                reader.
-                writer(String.Format("{0:0.00000000 }", N));
-                writer.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
-
-
+                string s= "";
+                while (s != "% Data")
+                    s = reader.ReadLine();
+                int x;
+                for (int z = 0; z < P; z++)
+                
+                    for (int y = 0; y < M; y++)
+                    {
+                        s = reader.ReadLine();
+                        x = 0;
+                        foreach (var number in s.Split())
+                        {
+                            if (number != "")
+                            {
+                                T[x, y, z] = Convert.ToDouble(number) *r;
+                                x++;
+                            }
+                        }
+                    }
+                reader.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
             }
             public void InicializationTempatureLevelTwo(double[,] Temp)
             {
