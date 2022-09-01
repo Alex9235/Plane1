@@ -159,6 +159,15 @@ namespace Decoder
             public double SigmS;  //предел текучести
             public double eS; //деформация текучести
 
+            private double[,] DeformMapT; //Массив напряжений зависимых от диформаций и температуры
+            private bool FlagDeformMapT; //флаг учитывающий связь температуры
+            private double Temp0; //миниальное значение температуры в зависимости s(e,T)
+            private double Temp1; //максимальное значение температуры в зависимости s(e,T)
+            private double ei0; //миниальное значение деформаций в зависимости s(e,T)
+            private double ei1; //максимальное значение деформаций в зависимости s(e,T)
+
+
+
             protected double l; //Коэффициент связанный с нано
 
             private bool FlagMultiModularIntensiveDeformations;
@@ -332,7 +341,7 @@ namespace Decoder
                 LoadTFULL(this.QTemp);
                 BorderT(this.QTemp, this.QTemp, this.QTemp, this.QTemp, this.QTemp, this.QTemp);
             }  
-            public void InicializationTempature(String puth, double alf)
+            public void InicializationTempature(String PathTemp, double alf)
             {
                 // 
                 if (FlagСurvilinearPlane)
@@ -352,7 +361,7 @@ namespace Decoder
                 double r = alf * lam1 * lam1;
 
                 System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
-                FileStream file1 = new FileStream(puth, FileMode.Open); //создаем файловый поток
+                FileStream file1 = new FileStream(PathTemp, FileMode.Open); //создаем файловый поток
                 StreamReader reader = new StreamReader(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
                 string s= "";
                 while (s != "% Data")
@@ -375,16 +384,13 @@ namespace Decoder
                     }
                 reader.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
             }
-            public void InicializationTempatureLevelTwo(double[,] Temp)
+            public void InicializationTempature(String PathTemp, String PathDeformMap, double alf, double Tem0, double Tem1, double Def0, double Def1)
             {
-                //задаётся температурное распределение через массив
-                //  что делать с коэффициентом альфа
-                //задаётся связанность зависимости интенсивности напряжения от деформации
-
+                // 
                 if (FlagСurvilinearPlane)
                 {
                     ErrorEnterConstructorParametrs();
-                    Console.WriteLine("Temperature can't job whis CurvilinearPlane");
+                    Console.WriteLine("Temperature can't job whis CurvilinearPlane so");
                     return;
                 }
                 if (alf <= 0 || alf > 1)
@@ -392,11 +398,75 @@ namespace Decoder
                     ErrorEnterConstructorParametrs();
                     return;
                 }
+                this.FlagDeformMapT = true;
                 this.FlagTemperatureProblem = true;
                 this.alf = alf;
-                this.QTemp = QTemp * alf * lam1 * lam1;
-                LoadTFULL(this.QTemp);
-                LoadT();
+                double po = alf * lam1 * lam1;
+                //значения вводятся в Кельвинах
+                this.Temp0 = Tem0*po;
+                this.Temp1 = Tem1*po;
+                //значения вводятся не безразмерными
+                this.ei0 = Def0*lam1*lam1;
+                this.ei1 = Def1*lam1*lam1;
+
+                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
+                //считываем данныем из температурного поля
+                FileStream file1 = new FileStream(PathTemp, FileMode.Open); //создаем файловый поток
+                StreamReader reader1 = new StreamReader(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
+                string s = "";
+                while (s != "% Data")
+                    s = reader1.ReadLine();
+                int x;
+                for (int z = 0; z < P; z++)
+                    for (int y = 0; y < M; y++)
+                    {
+                        s = reader1.ReadLine();
+                        x = 0;
+                        foreach (var number in s.Split())
+                        {
+                            if (number != "")
+                            {
+                                T[x, y, z] = Convert.ToDouble(number) * po;
+                                x++;
+                            }
+                        }
+                    }
+                reader1.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
+                //Считываем данные с распределение напряжений
+                FileStream file2 = new FileStream(PathDeformMap, FileMode.Open); //создаем файловый поток
+                StreamReader reader2 = new StreamReader(file2);//создаем «потоковый писатель» и связываем его с файловым потоком 
+                //определение размерности массива зависимости
+                int e=0;
+                int t=0;
+                s = "";
+                s = reader2.ReadLine();
+                foreach (var number in s.Split())
+                    if (number != "")
+                        t++;
+                while (true)
+                {
+                    e++;
+                    s = reader2.ReadLine();
+                    if (s == null) break;
+                }
+                DeformMapT = new double[t, e];
+                reader2.BaseStream.Position = 0;
+                //Забитие безразмерных данных в массив
+
+                int j = 0;
+                for (int i = 0; i < e; i++)
+                {
+                    s = reader2.ReadLine();
+                    j = 0;
+                    foreach (var number in s.Split())
+                        if (number != "")
+                        {
+                            DeformMapT[j, i] = Convert.ToDouble(number) / G0;
+                            j++;
+                        }
+                }
+                reader2.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
+
             }
 
             public void InicializationTimeProblem(double Dissipation)
@@ -407,6 +477,7 @@ namespace Decoder
                     return;
                 }
                 FlagTimeProblem = true;
+                this.Dissipation = Dissipation; 
             }
             public void InicializationVariationGradient(double ConstRaspredGradient, double NU1, double E1) 
             {
@@ -516,9 +587,14 @@ namespace Decoder
                 this.l = 0;
 
                 //cвязанность с температурой
+                this.FlagDeformMapT = false;
                 this.FlagTemperatureProblem = false;
                 this.alf = 0;
                 this.QTemp = 0;
+                this.Temp0 = 0;
+                this.Temp1 = 0;
+                this.ei0 = 0;
+                this.ei1 = 0;
                 //учёты распределения градиента
                 this.FlagGradientProblem = false;   
                 this.ConstRaspredGradient = 0;
@@ -530,6 +606,7 @@ namespace Decoder
 
                 //Временной параметр
                 this.FlagTimeProblem = false;
+                this.Dissipation = 0;
                 //Пористость
                 this.FlagPorysotyProblem = false;
                 this.ConstPoriststb = 0;
@@ -650,25 +727,37 @@ namespace Decoder
                         else
                             return (double)(3 * eii);
             }
-            private double SigmaEiiT(double eii,double T)
+            private double SigmaEiiT(double eii,double Tem)
             {
-                if (eii < 0)
-                    if (FlagLinearyAndExponentModelSigmaEpsilon2)
-                        return (double)(-SigmS1 * (1 - Math.Exp(eii / eS1)));
-                    else
-                        return (double)(3 * Gk2 * eii);
-                else
-                    if (FlagLinearyAndExponentModelSigmaEpsilon1)
-                    return (double)(SigmS * (1 - Math.Exp(-eii / eS)));
-                else
-                        if (FlagLinearyHard1)
-                    if (eii <= eS)
-                        return 3 * eii;
-                    else
-                        return (eS * (G0 - G01) + G01 * eii) * 3 / G0;
+                //установка минимальной и максимальной температуры в файле распределения
+                //температура в кельвинах
+                double x = Tem;
+                double y = eii;
+                //члены бикубической интерполяции
+                double b1 = (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1)/4;
+                double b2 = -x*(x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1) / 4;
+                double b3 = -y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2) / 4;
+                double b4 = x*y*(x + 1) * (x - 2) * (y + 1) * (y - 2) / 4;
+                double b5 = -x*(x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1) / 12;
+                double b6 = -y*(x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) / 12;
+                double b7 = x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2) / 12;
+                double b8 = x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2) / 12;
+                double b9 = x*(x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1) / 12;
+                double b10 = y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1) / 12;
+                double b11 = x* y * (x - 1) * (x - 2) * (y - 1) * (y - 2) / 36;
+                double b12 = - x * y*(x - 1) * (x + 1) * (y + 1) * (y - 2)/ 12;
+                double b13 = - x*y*(x + 1) * (x - 2) * (y - 1) * (y + 1) / 12;
+                double b14 = - x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2) / 36;
+                double b15 = - x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1) / 36;
+                double b16 = x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1) / 36;
+                int i0 = 0;
+                int j0 = 0;
+                double DeltTemp = (Temp1-Temp0)/(DeformMapT.GetLength(0)-1);
+                double DeltEi = (ei1 - ei0) / (DeformMapT.GetLength(1) - 1);
+                i0 = (int)Math.Truncate((Tem-Temp0)/DeltTemp);
+                j0 = (int)Math.Truncate((eii - ei0) / DeltEi);
 
-                else
-                    return (double)(3 * eii);
+                return 0;
             }
 
 
@@ -679,6 +768,13 @@ namespace Decoder
                     return 1;
                 else
                     return SigmaEii(eii) / (3 * eii);
+            }
+            private double G(double eii, double Tempature)
+            {
+                if (eii == 0)
+                    return 1;
+                else
+                    return SigmaEiiT(eii,Tempature) / (3 * eii);
             }
             private void LoadEii()
             {
@@ -724,6 +820,8 @@ namespace Decoder
                         for (int z = 0; z < P; z++)
                         {
                             double Gg = G(Eii[x, y, z]);
+                            if (FlagDeformMapT)
+                                Gg = G(Eii[x, y, z],T[x,y,z]);
                             if (Eii[x, y, z] < 0)
                                 NU[x, y, z] = (3 * K2 - 2 * Gg) / (6 * K2 + 2 * Gg);
                             else
@@ -765,6 +863,8 @@ namespace Decoder
                         for (int z = 0; z < P; z++)
                         {
                             double Gg = G(Eii[x, y, z]);
+                            if (FlagDeformMapT)
+                                Gg = G(Eii[x, y, z], T[x, y, z]);
                             if (Eii[x, y, z] < 0)
                                 E[x, y, z] = 9 * K2 * Gg / (3 * K2 + Gg);
                             else
@@ -4064,17 +4164,15 @@ namespace Decoder
                     ModelPoristostb = 3;
                     break;
                 case 20:
-                    //steel T=300;
                     // для экспоненциального!!!
-                    G0 = 74996;//коэффициент модуля сдвига для сжатия
-                    sigmas = 630.642;
-                    es = 0.002803;
+                    G0 = 108615;//коэффициент модуля сдвига для сжатия
+                    sigmas = 706;
+                    es = 0.0025;
                     nu = 0.3;// коэффициент Пуассона
-                    QTemp = 300; //Температурная нагрузка
-                    alf = 0.000017; //коэффициент линейного температурного расширения
+                    alf = 0.000018; //коэффициент линейного температурного расширения
                     plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/тем_500.txt", alf);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/тем_500.txt", "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf,273.15, 873.15,0,0.012);
                     break;
                 default: break;
 
