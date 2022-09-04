@@ -159,7 +159,7 @@ namespace Decoder
             public double SigmS;  //предел текучести
             public double eS; //деформация текучести
 
-            private double[,] DeformMapT; //Массив напряжений зависимых от диформаций и температуры
+            public double[,] DeformMapT; //Массив напряжений зависимых от диформаций и температуры
             private bool FlagDeformMapT; //флаг учитывающий связь температуры
             private double Temp0; //миниальное значение температуры в зависимости s(e,T)
             private double Temp1; //максимальное значение температуры в зависимости s(e,T)
@@ -449,23 +449,43 @@ namespace Decoder
                     s = reader2.ReadLine();
                     if (s == null) break;
                 }
-                DeformMapT = new double[t, e];
+                DeformMapT = new double[t+2, e+2];
+                //возвращение чтения в начальную позицию
                 reader2.BaseStream.Position = 0;
                 //Забитие безразмерных данных в массив
 
-                int j = 0;
+
                 for (int i = 0; i < e; i++)
                 {
+                    int j = 0;
                     s = reader2.ReadLine();
                     j = 0;
                     foreach (var number in s.Split())
                         if (number != "")
                         {
-                            DeformMapT[j, i] = Convert.ToDouble(number) / G0;
+                            DeformMapT[j+1, i+1] = Convert.ToDouble(number)*lam1*lam1/G0;
                             j++;
                         }
                 }
+                //Установление за граничных значений по линейной зависимости
+                for (int i = 0; i < e; i++)
+                {
+                    DeformMapT[0, i+1] = 2 * DeformMapT[1, i+1] - DeformMapT[2, i+1];
+                    DeformMapT[t+1, i+1] = 2 * DeformMapT[t, i+1] - DeformMapT[t-1, i+1];
+                }
+                for (int j = 0; j < t; j++)
+                {
+                    DeformMapT[j+1, 0] = 2 * DeformMapT[j+1, 1] - DeformMapT[j+1, 2];
+                    DeformMapT[j+1, e+1] = 2 * DeformMapT[j+1, e] - DeformMapT[j+1, e-1];
+                }
+                //угловые точки
+                DeformMapT[0, 0] = DeformMapT[0, 1] - 0.5* DeformMapT[0, 2] + DeformMapT[1, 0] -0.5* DeformMapT[2, 0];
+                DeformMapT[0, e+1] = DeformMapT[0, e] - 0.5 * DeformMapT[0, e-1] + DeformMapT[1, e+1] - 0.5 * DeformMapT[2, e+1];
+                DeformMapT[t+1, 0] = DeformMapT[t+1, 1] - 0.5 * DeformMapT[t+1, 2] + DeformMapT[t, 0] - 0.5 * DeformMapT[t-1, 0];
+                DeformMapT[t+1, e+1] = DeformMapT[t+1, e] - 0.5 * DeformMapT[t+1, e-1] + DeformMapT[t, e+1] - 0.5 * DeformMapT[t-1, e+1];
+
                 reader2.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
+
 
             }
 
@@ -560,6 +580,7 @@ namespace Decoder
                 T = new double[N, M, this.P];
                 Temp = new double[N, M, this.P];
                 DZ = new double[N, M];
+               
 
                 //геометрические параметры
                 lam = n / m;
@@ -727,39 +748,82 @@ namespace Decoder
                         else
                             return (double)(3 * eii);
             }
-            private double SigmaEiiT(double eii,double Tem)
+            private double SigmaEiiTIntorpaletion(double eii,double Tem)
             {
                 //установка минимальной и максимальной температуры в файле распределения
                 //температура в кельвинах
                 double x = Tem;
                 double y = eii;
+
+                //точки определяющие целочисленное положение на массиве s(e,t)
+                double DeltTemp = (Temp1 - Temp0) / (DeformMapT.GetLength(0) - 3);
+                double DeltEi = (ei1 - ei0) / (DeformMapT.GetLength(1) - 3);
+
+                //ццент относительно которого считается кубическая интерполяция
+                int Centri0 = (int)Math.Truncate((Tem - Temp0) / DeltTemp) + 1;
+                int Centrj0 = (int)Math.Truncate((eii - ei0) / DeltEi) + 1;
+
+                if (Centri0 > DeformMapT.GetLength(0) - 3) Centri0 = DeformMapT.GetLength(0) - 3;
+                if (Centrj0 > DeformMapT.GetLength(1) - 3) Centrj0 = DeformMapT.GetLength(1) - 3;
+
+                //модификация eii и Т для вычисления бикубической инеропляции
+                x = (x - (Centri0 - 1) * DeltTemp - Temp0) / DeltTemp;
+                y = (y - (Centrj0 - 1) * DeltEi) / DeltEi;
+                //ограничение значений на вылет из массива
+
+                if (x > 1) x = 1;
+                if (y > 1) y = 1;
+
+                //Значения точек в массивах
+                double f00 = DeformMapT[Centri0 - 1, Centrj0 - 1];
+                double f01 = DeformMapT[Centri0 - 1, Centrj0];
+                double f10 = DeformMapT[Centri0, Centrj0 - 1];
+                double f11 = DeformMapT[Centri0, Centrj0];
+                double f02 = DeformMapT[Centri0 - 1, Centrj0 + 1];
+                double f20 = DeformMapT[Centri0 + 1, Centrj0 - 1];
+                double f12 = DeformMapT[Centri0, Centrj0 + 1];
+                double f21 = DeformMapT[Centri0 + 1, Centrj0];
+                double f22 = DeformMapT[Centri0 + 1, Centrj0 + 1];
+                double f03 = DeformMapT[Centri0 - 1, Centrj0 + 2];
+                double f30 = DeformMapT[Centri0 + 2, Centrj0 - 1];
+                double f13 = DeformMapT[Centri0, Centrj0 + 2];
+                double f31 = DeformMapT[Centri0 + 2, Centrj0];
+                double f23 = DeformMapT[Centri0 + 1, Centrj0 + 2];
+                double f32 = DeformMapT[Centri0 + 2, Centrj0 + 1];
+                double f33 = DeformMapT[Centri0 + 2, Centrj0 + 2];
+
                 //члены бикубической интерполяции
-                double b1 = (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) * (y + 1)/4;
-                double b2 = -x*(x + 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1) / 4;
-                double b3 = -y * (x - 1) * (x - 2) * (x + 1) * (y + 1) * (y - 2) / 4;
-                double b4 = x*y*(x + 1) * (x - 2) * (y + 1) * (y - 2) / 4;
-                double b5 = -x*(x - 1) * (x - 2) * (y - 1) * (y - 2) * (y + 1) / 12;
-                double b6 = -y*(x - 1) * (x - 2) * (x + 1) * (y - 1) * (y - 2) / 12;
-                double b7 = x * y * (x - 1) * (x - 2) * (y + 1) * (y - 2) / 12;
-                double b8 = x * y * (x + 1) * (x - 2) * (y - 1) * (y - 2) / 12;
-                double b9 = x*(x - 1) * (x + 1) * (y - 1) * (y - 2) * (y + 1) / 12;
-                double b10 = y * (x - 1) * (x - 2) * (x + 1) * (y - 1) * (y + 1) / 12;
-                double b11 = x* y * (x - 1) * (x - 2) * (y - 1) * (y - 2) / 36;
-                double b12 = - x * y*(x - 1) * (x + 1) * (y + 1) * (y - 2)/ 12;
-                double b13 = - x*y*(x + 1) * (x - 2) * (y - 1) * (y + 1) / 12;
-                double b14 = - x * y * (x - 1) * (x + 1) * (y - 1) * (y - 2) / 36;
-                double b15 = - x * y * (x - 1) * (x - 2) * (y - 1) * (y + 1) / 36;
-                double b16 = x * y * (x - 1) * (x + 1) * (y - 1) * (y + 1) / 36;
-                int i0 = 0;
-                int j0 = 0;
-                double DeltTemp = (Temp1-Temp0)/(DeformMapT.GetLength(0)-1);
-                double DeltEi = (ei1 - ei0) / (DeformMapT.GetLength(1) - 1);
-                i0 = (int)Math.Truncate((Tem-Temp0)/DeltTemp);
-                j0 = (int)Math.Truncate((eii - ei0) / DeltEi);
+                double a00 = f11;
+                double a01 = -0.5 * f10 + 0.5 * f12;
+                double a02 = f10 - 2.5 * f11 + 2 * f12 - 0.5 * f13;
+                double a03 = -0.5 * f10 + 1.5 * f11 - 1.5 * f12 + 0.5 * f13;
+                double a10 = -0.5 * f01 + 0.5 * f21;
+                double a11 = 0.25 * f00 - 0.25 * f02 - 0.25 * f20 + 0.25 * f22;
+                double a12 = -0.5 * f00 + 1.25 * f01 - f02 + 0.25 * f03 + 0.5 * f20 - 1.25 * f21 + f22 - 0.25 * f23;
+                double a13 = 0.25 * f00 - 0.75 * f01 + 0.75 * f02 - 0.25 * f03 - 0.25 * f20 + 0.75 * f21 - 0.75 * f22 + 0.25 * f23;
+                double a20 = f01 - 2.5 * f11 + 2 * f21 - 0.5 * f31;
+                double a21 = -0.5 * f00 + 0.5 * f02 + 1.25 * f10 - 1.25 * f12 - f20 + f22 + 0.25 * f30 - 0.25 * f32;
+                double a22 = f00 - 2.5 * f01 + 2 * f02 - 0.5 * f03 - 2.5 * f10 + 6.25 * f11 - 5 * f12 + 1.25 * f13
+                    + 2 * f20 - 5 * f21 + 4 * f22 - f23 - 0.5 * f30 + 1.25 * f31 - f32 + 0.25 * f33;
+                double a23 = -0.5 * f00 + 1.5 * f01 - 1.5 * f02 + 0.5 * f03 + 1.25 * f10 - 3.75 * f11 + 3.75 * f12
+                    - 1.25 * f13 - f20 + 3 * f21 - 3 * f22 + f23 + 0.25 * f30 - 0.75 * f31 + 0.75 * f32 - 0.25 * f33;
+                double a30 = -0.5 * f01 + 1.5 * f11 - 1.5 * f21 + 0.5 * f31;
+                double a31 = 0.25 * f00 - 0.25 * f02 - 0.75 * f10 + 0.75 * f12 + 0.75 * f20 - 0.75 * f22 - 0.25 * f30 + 0.25 * f32;
+                double a32 = -0.5 * f00 + 1.25 * f01 - f02 + 0.25 * f03 + 1.5 * f10 - 3.75 * f11 + 3 * f12
+                    - 0.75 * f13 - 1.5 * f20 + 3.75 * f21 - 3 * f22 + 0.75 * f23 + 0.5 * f30 - 1.25 * f31 + f32 - 0.25 * f33;
+                double a33 = 0.25 * f00 - 0.75 * f01 + 0.75 * f02 - 0.25 * f03 - 0.75 * f10 + 2.25 * f11 - 2.25 * f12 + 0.75 * f13
+                    + 0.75 * f20 - 2.25 * f21 + 2.25 * f22 - 0.75 * f23 - 0.25 * f30 + 0.75 * f31 - 0.75 * f32 + 0.25 * f33;
+                double sigmaI = (a00 + a01 * y + a02 * y * y + a03 * y * y * y) +
+                                (a10 + a11 * y + a12 * y * y + a13 * y * y * y) * x +
+                                (a20 + a21 * y + a22 * y * y + a23 * y * y * y) * x * x +
+                                (a30 + a31 * y + a32 * y * y + a33 * y * y * y) * x * x * x;
+                int fack;
+                if (Centri0 == 4)
+                    fack = 0;
+                return sigmaI;
 
-                return 0;
             }
-
+            
 
             // подсчёт G
             private double G(double eii)
@@ -774,7 +838,7 @@ namespace Decoder
                 if (eii == 0)
                     return 1;
                 else
-                    return SigmaEiiT(eii,Tempature) / (3 * eii);
+                    return SigmaEiiTIntorpaletion(eii,Tempature) / (3 * eii);
             }
             private void LoadEii()
             {
@@ -3743,22 +3807,27 @@ namespace Decoder
             /// ...............................................................................
 
         }
-        static void WriteMassivInFile(double[,] Mass, string j)
+        static void WriteMassivInFile(double[,] Mass, string j,bool invers)
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
             FileStream file1 = new FileStream("File_" + j.ToString() + ".txt", FileMode.Create); //создаем файловый поток
             StreamWriter writer = new StreamWriter(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
 
             //Вывод массива данных в файл
-            for (int i = 0; i < Mass.GetLength(0); i++)
-            {
+            if (invers)
+                for (int i = 0; i < Mass.GetLength(0); i++)
+                {
+                    for (int k = 0; k < Mass.GetLength(1); k++)
+                        writer.Write(String.Format("{0:0.00000000 }", Mass[i, k]));
+                    writer.WriteLine();
+                }
+            else
                 for (int k = 0; k < Mass.GetLength(1); k++)
                 {
-                    writer.Write(String.Format("{0:0.00000000 }", Mass[i, k]));
+                    for (int i = 0; i < Mass.GetLength(0); i++)
+                        writer.Write(String.Format("{0:0.00000000 }", Mass[i, k]));
+                    writer.WriteLine();
                 }
-                writer.WriteLine();
-            }
-
             writer.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
         }
         static void WriteMassivInFile(double[,,] Mass, int index, string j)
@@ -3820,7 +3889,7 @@ namespace Decoder
                     }
                 }
             }
-            WriteMassivInFile(Exit, s);
+            WriteMassivInFile(Exit, s,true);
         }
        
 
@@ -4351,7 +4420,7 @@ namespace Decoder
                                     for (int i2 = 0; i2 < P * 2 - 1; i2++)
                                         for (int k2 = 0; k2 < N; k2++)
                                             granb[i2, k2] = plast.Eii[k2, 0, i2];
-                                    WriteMassivInFile(granb, "granb 0");
+                                    WriteMassivInFile(granb, "granb 0",true);
                                 }
                             }
                     }
@@ -4368,7 +4437,7 @@ namespace Decoder
                         for (int i2 = 0; i2 < P * 2 - 1; i2++)
                             for (int k2 = 0; k2 < N; k2++)
                                 granb[i2, k2] = plast.Eii[k2, 0, i2];
-                        WriteMassivInFile(granb, "granb 0");
+                        WriteMassivInFile(granb, "granb 0",true);
                     }
                     //Первое проявление нелинейности
                     if (FlagFirstNonlinear)
@@ -4399,6 +4468,8 @@ namespace Decoder
                     plast.RELoad();
                 }
             }
+
+
             stopwatch.Stop();
             Console.WriteLine("Затрачиваемое время " + stopwatch.ElapsedMilliseconds + " мс");
             Console.WriteLine(Form);
