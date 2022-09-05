@@ -730,23 +730,24 @@ namespace Decoder
             // зависимости напряжений от деформаций
             private double SigmaEii(double eii)
             {
+                double ans =0;
                 if (eii < 0)
                     if (FlagLinearyAndExponentModelSigmaEpsilon2)
-                        return (double)(-SigmS1 * (1 - Math.Exp(eii / eS1)));
+                        ans = (double)(-SigmS1 * (1 - Math.Exp(eii / eS1)));
                     else
-                        return (double)(3 * Gk2 * eii);
+                        ans = (double)(3 * Gk2 * eii);
                 else
                     if (FlagLinearyAndExponentModelSigmaEpsilon1)
-                        return (double)(SigmS * (1 - Math.Exp(-eii / eS)));
+                        ans = (double)(SigmS * (1 - Math.Exp(-eii / eS)));
                     else
                         if (FlagLinearyHard1)
                             if (eii <= eS)
-                                return 3 * eii;
+                                ans = 3 * eii;
                             else
-                                return (eS*(G0-G01)+G01*eii)*3/G0;
-
+                                ans = (eS*(G0-G01)+G01*eii)*3/G0;
                         else
-                            return (double)(3 * eii);
+                            ans = (double)(3 * eii);
+                return ans;
             }
             private double SigmaEiiTIntorpaletion(double eii,double Tem)
             {
@@ -817,9 +818,7 @@ namespace Decoder
                                 (a10 + a11 * y + a12 * y * y + a13 * y * y * y) * x +
                                 (a20 + a21 * y + a22 * y * y + a23 * y * y * y) * x * x +
                                 (a30 + a31 * y + a32 * y * y + a33 * y * y * y) * x * x * x;
-                int fack;
-                if (Centri0 == 4)
-                    fack = 0;
+
                 return sigmaI;
 
             }
@@ -838,7 +837,7 @@ namespace Decoder
                 if (eii == 0)
                     return 1;
                 else
-                    return SigmaEiiTIntorpaletion(eii,Tempature) / (3 * eii);
+                    return SigmaEiiTIntorpaletion(eii,Tempature)/ (3 * eii);
             }
             private void LoadEii()
             {
@@ -877,13 +876,14 @@ namespace Decoder
             // расчёт массива коэффициентов Пуссона
             private void LoadNU()
             {
+                double Gg=0;
                 for (int x = 0; x < N; x++)
                 {
                     for (int y = 0; y < M; y++)
                     {
                         for (int z = 0; z < P; z++)
                         {
-                            double Gg = G(Eii[x, y, z]);
+                            Gg = G(Eii[x, y, z]);
                             if (FlagDeformMapT)
                                 Gg = G(Eii[x, y, z],T[x,y,z]);
                             if (Eii[x, y, z] < 0)
@@ -3794,7 +3794,7 @@ namespace Decoder
                             //if (Math.Abs(W[i, j]) > MaxWForMethodIteration2) MaxWForMethodIteration2 = Math.Abs(W[i, j]); // Нахождение максимального прогиба
                         }
 
-                    if (Math.Abs(MaxWForMethodIteration1) < epsilon) break;
+                    if (Math.Abs(MaxWForMethodIteration1) < epsilon || Math.Abs(MaxWForMethodIteration1)>100) break;
 
                     //ShowMassiv2(W);
                     //Console.WriteLine(mW+" "+ CountIterationPhisicalNoneleneary);
@@ -3941,7 +3941,7 @@ namespace Decoder
             int ModelPoristostb = 0; // модель пористости (4)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
             // определяющие параметры используемы при счёте
-            int model = 20;
+            int model = 21;
             // тип граничных условий
             int typeGrandIF = 1;
             //Тип нагрузки
@@ -3957,7 +3957,7 @@ namespace Decoder
             bool flagNagruzki = true;
             int U1 = 0; // начальное знавение нагрузки 
             int U2 = 400; // коненчное значение нагрузки 
-            double Q = 130; // шаг нагрузки
+            double Q = 60; // шаг нагрузки
             // https://www.lib.tpu.ru/fulltext/v/Bulletin_TPU/2006/v309/i2/06.pdf
 
             // создаю объект класса БАЛКА
@@ -4236,12 +4236,24 @@ namespace Decoder
                     // для экспоненциального!!!
                     G0 = 108615;//коэффициент модуля сдвига для сжатия
                     sigmas = 706;
-                    es = 0.0025;
+                    es = 0.00216666;
                     nu = 0.3;// коэффициент Пуассона
                     alf = 0.000018; //коэффициент линейного температурного расширения
                     plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/тем_500.txt", "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf,273.15, 873.15,0,0.012);
+                    
+                    break;
+                case 21:
+                    // для экспоненциального!!!
+                    G0 = 108615;//коэффициент модуля сдвига для сжатия
+                    sigmas = 706;
+                    es = 0.00216666;
+                    nu = 0.3;// коэффициент Пуассона
+                    alf = 0.000018; //коэффициент линейного температурного расширения
+                    plast.InicializationPlast(nu, G0);
+                    plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/тем_500.txt", 
+                        "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf,273.15, 873.15,0,0.012);
                     break;
                 default: break;
 
