@@ -3941,7 +3941,7 @@ namespace Decoder
             int ModelPoristostb = 0; // модель пористости (4)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
             // определяющие параметры используемы при счёте
-            int model = 21;
+            int model = 20;
             // тип граничных условий
             int typeGrandIF = 1;
             //Тип нагрузки
@@ -3954,10 +3954,10 @@ namespace Decoder
             int a = 9;
             // данные по керамике
             //Режим счёта с одной нагрузкой и множеством
-            bool flagNagruzki = true;
+            bool flagNagruzki = false;
             int U1 = 0; // начальное знавение нагрузки 
             int U2 = 400; // коненчное значение нагрузки 
-            double Q = 60; // шаг нагрузки
+            double Q = 0.5; // шаг нагрузки
             // https://www.lib.tpu.ru/fulltext/v/Bulletin_TPU/2006/v309/i2/06.pdf
 
             // создаю объект класса БАЛКА
@@ -4234,26 +4234,36 @@ namespace Decoder
                     break;
                 case 20:
                     // для экспоненциального!!!
-                    G0 = 108615;//коэффициент модуля сдвига для сжатия
-                    sigmas = 706;
-                    es = 0.00216666;
+                    G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    sigmas = 710.605;
+                    es = 0.00263539;
                     nu = 0.3;// коэффициент Пуассона
                     alf = 0.000018; //коэффициент линейного температурного расширения
                     plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    
                     break;
                 case 21:
                     // для экспоненциального!!!
-                    G0 = 108615;//коэффициент модуля сдвига для сжатия
-                    sigmas = 706;
-                    es = 0.00216666;
+                    G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    sigmas = 710.605;
+                    es = 0.00263539;
                     nu = 0.3;// коэффициент Пуассона
                     alf = 0.000018; //коэффициент линейного температурного расширения
                     plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/тем_500.txt", 
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp.txt", 
                         "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf,273.15, 873.15,0,0.012);
+                    break;
+                case 22:
+                    // для экспоненциального!!!
+                    G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    sigmas = 710.605;
+                    es = 0.00263539;
+                    nu = 0.3;// коэффициент Пуассона
+                    alf = 0.000018; //коэффициент линейного температурного расширения
+                    plast.InicializationPlast(nu, G0);
+                    plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp.txt", alf);
                     break;
                 default: break;
 
@@ -4450,6 +4460,7 @@ namespace Decoder
                             for (int k2 = 0; k2 < N; k2++)
                                 granb[i2, k2] = plast.Eii[k2, 0, i2];
                         WriteMassivInFile(granb, "granb 0",true);
+                        WriteMassivInFile(plast.PrintW,"Progib",true);
                     }
                     //Первое проявление нелинейности
                     if (FlagFirstNonlinear)
