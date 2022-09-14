@@ -1445,6 +1445,7 @@ namespace Decoder
                 //подсчёт моментов
                 if (FlagTemperatureProblem)
                     LoadI();
+                
                 LoadD();
                 LoadR();
                 LoadS();
@@ -1457,6 +1458,7 @@ namespace Decoder
             {
                 //вычисление деформции
                 LoadEii();
+               
                 //вычисление новых коэффициентов пуассона
                 LoadNU();
                 //вычисление новых модулей Юнга
@@ -2281,11 +2283,11 @@ namespace Decoder
                 }
                 if (xy)
                 {
-                    return -AB[i + 1] * (Id2x + 2 * lam * lam * Id2y - F[i - 1, j - 1]);
+                    return -AB[i + 1] * (Id2x + lam * lam * Id2y - F[i - 1, j - 1]);
                 }
                 else
                 {
-                    return -AB[j + 1] * (Id2x + 2 * lam * lam * Id2y - F[i - 1, j - 1]);
+                    return -AB[j + 1] * (Id2x + lam * lam * Id2y - F[i - 1, j - 1]);
                 }
             }
             private void Pn(double[] p, double[] AB, bool xy, Functions Fn, double[,] F)
@@ -3795,7 +3797,7 @@ namespace Decoder
                         }
 
                     if (Math.Abs(MaxWForMethodIteration1) < epsilon || Math.Abs(MaxWForMethodIteration1)>100) break;
-
+                   
                     //ShowMassiv2(W);
                     //Console.WriteLine(mW+" "+ CountIterationPhisicalNoneleneary);
                     // пересчёт всех значений с новыми прогибами
@@ -3855,6 +3857,14 @@ namespace Decoder
             FileStream file1 = new FileStream("File_" + j.ToString() + ".txt", FileMode.Append); //создаем файловый поток
             StreamWriter writer = new StreamWriter(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
             writer.WriteLine(String.Format("{0:0.00000000 }", N));
+            writer.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
+        }
+        static void WriteNumberInFile(double N, double W, string j)
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
+            FileStream file1 = new FileStream("File_" + j.ToString() + ".txt", FileMode.Append); //создаем файловый поток
+            StreamWriter writer = new StreamWriter(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
+            writer.WriteLine(String.Format("{0:0.00000000} {1:0.00000000} ", N,W));
             writer.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
         }
         static void WriteMassivInFile(double[] Mass, string j)
@@ -3954,14 +3964,17 @@ namespace Decoder
             int a = 9;
             // данные по керамике
             //Режим счёта с одной нагрузкой и множеством
-            bool flagNagruzki = false;
+            bool flagNagruzki = true;
             int U1 = 0; // начальное знавение нагрузки 
             int U2 = 400; // коненчное значение нагрузки 
-            double Q = 0.5; // шаг нагрузки
+            double Q = 80; // шаг нагрузки
             // https://www.lib.tpu.ru/fulltext/v/Bulletin_TPU/2006/v309/i2/06.pdf
 
             // создаю объект класса БАЛКА
             Plast plast = new Plast(N, M, P, n, m, p);
+           
+                
+
             // типы исследуемых моделей
             switch (model)
             {
@@ -4017,7 +4030,7 @@ namespace Decoder
                     // для экспоненциального!!!
                     G0 = 83250;
                     sigmas = 728.522;
-                    es = 0.002917; 
+                    es = 0.002917;
                     nu = 0.3;
                     l = 0.5;
                     plast.InicializationPlast(nu, G0);
@@ -4139,9 +4152,9 @@ namespace Decoder
                     sigmas = 193;
                     es = 0.002382;
                     G0 = 27000;//коэффициент модуля сдвига для сжатия
-                    //sigmas1 = 204;
-                    //es1 = 0.002518;
-                    //G1 = 27000;
+                                //sigmas1 = 204;
+                                //es1 = 0.002518;
+                                //G1 = 27000;
                     sigmas1 = 0;
                     es1 = 0;
                     G1 = 0;
@@ -4194,7 +4207,7 @@ namespace Decoder
                     sigmas1 = 100;
                     es1 = 0.0021235;
                     G1 = 9668;//коэффициент модуля сдвига для сжатия
-                    //G1 = 15697;
+                                //G1 = 15697;
                     l = 0.7;
                     RaspredGradient = 0;
                     Poristostb = 0.4;
@@ -4206,7 +4219,7 @@ namespace Decoder
                     sigmas = 98.0665;
                     es = 0.001234;
                     G0 = 26490; //коэффициент модуля сдвига для сжатия
-                    //гипотетческое сигма 15 % от существенного.
+                                //гипотетческое сигма 15 % от существенного.
                     nu2 = 0.314;// коэффициент Пуассона
                     sigmas1 = 112.776475;
                     es1 = 0.001234;
@@ -4222,7 +4235,7 @@ namespace Decoder
                     sigmas = 98.0665;
                     es = 0.001234;
                     G0 = 26490;//коэффициент модуля сдвига для сжатия
-                    //гипотетческое сигма 15 % от существенного.
+                                //гипотетческое сигма 15 % от существенного.
                     nu2 = 0.314;// коэффициент Пуассона
                     sigmas1 = 112.776475;
                     es1 = 0.008;
@@ -4235,24 +4248,24 @@ namespace Decoder
                 case 20:
                     // для экспоненциального!!!
                     G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    nu = 0.3;// коэффициент Пуассона
+                    plast.InicializationPlast(nu, G0);
                     sigmas = 710.605;
                     es = 0.00263539;
-                    nu = 0.3;// коэффициент Пуассона
-                    alf = 0.000018; //коэффициент линейного температурного расширения
-                    plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    //l = 0.5;
+                    //plast.InicializationNano(l);
                     break;
                 case 21:
                     // для экспоненциального!!!
                     G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    nu = 0.3;// коэффициент Пуассона
+                    plast.InicializationPlast(nu, G0);
                     sigmas = 710.605;
                     es = 0.00263539;
-                    nu = 0.3;// коэффициент Пуассона
-                    alf = 0.000018; //коэффициент линейного температурного расширения
-                    plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp.txt", 
-                        "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf,273.15, 873.15,0,0.012);
+                    alf = 0.000018; //коэффициент линейного температурного расширения
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/Rtemp_2100.txt", alf);
                     break;
                 case 22:
                     // для экспоненциального!!!
@@ -4263,10 +4276,55 @@ namespace Decoder
                     alf = 0.000018; //коэффициент линейного температурного расширения
                     plast.InicializationPlast(nu, G0);
                     plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp.txt", alf);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/Rtemp_2100.txt",
+                        "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
+                    //l = 0;
+                    //plast.InicializationNano(l);
+                    break;
+                case 23:
+                    // для экспоненциального!!!
+                    G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    sigmas = 710.605;
+                    es = 0.00263539;
+                    nu = 0.3;// коэффициент Пуассона
+                    alf = 0.000018; //коэффициент линейного температурного расширения
+                    plast.InicializationPlast(nu, G0);
+                    plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_400.txt",
+                        "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
+                    //l = 0;
+                    //plast.InicializationNano(l);
+                    break;
+                case 24:
+                    // для экспоненциального!!!
+                    G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    sigmas = 710.605;
+                    es = 0.00263539;
+                    nu = 0.3;// коэффициент Пуассона
+                    alf = 0.000018; //коэффициент линейного температурного расширения
+                    plast.InicializationPlast(nu, G0);
+                    plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_500.txt",
+                        "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
+                    //l = 0;
+                    //plast.InicializationNano(l);
+                    break;
+                case 25:
+                    // для экспоненциального!!!
+                    G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
+                    sigmas = 710.605;
+                    es = 0.00263539;
+                    nu = 0.3;// коэффициент Пуассона
+
+                    alf = 0.000018; //коэффициент линейного температурного расширения
+                    plast.InicializationPlast(nu, G0);
+                    plast.InicializationExpFizicalNonlinProblem(sigmas, es);
+                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_600.txt",
+                        "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
+                    //l = 0;
+                    //plast.InicializationNano(l);
                     break;
                 default: break;
-
             }
             if (plast.Error) return;
 
@@ -4281,7 +4339,7 @@ namespace Decoder
                 FlagPlastSharn = false;
                 FlagFirstNonlinear = false;
             }
-            switch(typeGrandIF)
+            switch (typeGrandIF)
             {
                 case 1:
                     TypeBorder1 = 0;
@@ -4302,13 +4360,13 @@ namespace Decoder
                     TypeBorder4 = 1;
                     break;
                 default:
-                    
-                    break; 
+
+                    break;
             }
 
 
             Load F = new Load(N, M, typeQ, Q); // массив для нагрузки
-            //создаем объект
+                                                //создаем объект
             Stopwatch stopwatch = new Stopwatch();
             //засекаем время начала операции
             stopwatch.Start();
@@ -4324,14 +4382,14 @@ namespace Decoder
             //}
             if (true)
             {
-                
+
                 for (int i = U1; i <= U2; i++)
                 {
                     F.LoadValue = Q * i;
                     F.FullLoad();
                     ///0-Жёсткая заделка
                     ///1-Шарнир 
-                    
+
                     switch (TypeMethod)
                     {
                         case 1:
@@ -4393,7 +4451,7 @@ namespace Decoder
                     //for (int y = 1; y < M + 1; y++)
                     //    PrintW2Y[y - 1] = (plast.W[N / 2, y - 1] - 2 * plast.W[N / 2, y] + plast.W[N / 2, y + 1]) / (dy * dy);
 
-                    
+
 
                     WriteNumberInFile(plast.MaximumCountIterationOfMethodAllDecision, "IM_" + Form);
 
@@ -4408,7 +4466,7 @@ namespace Decoder
 
 
                     //Вывод связанный со временем
-                    
+
 
                     //WriteNumberInFile(plast.SignalMaxW[plast.SignalMaxW.Length-1], String.Format("TQ{0}_{1}{2}{3}{4}_B(a){5}M{6}n{7}Q{8}WX_{9}_{10}_{11}t0{12}t1{11}dis{12}", 
                     //    typeQ, TypeBorder1, TypeBorder2, TypeBorder3, TypeBorder4, a, TypeMethod, n, Q, N, M, 2 * P - 1, t0, t1, dissipation));
@@ -4418,7 +4476,7 @@ namespace Decoder
                     //    typeQ, TypeBorder1, TypeBorder2, TypeBorder3, TypeBorder4, a, TypeMethod, n, Q, N, M, 2 * P - 1, t0, t1, dissipation));
 
                     //Console.WriteLine(String.Format("{0} {1:0.0}", i, Q * i) + " " + plast.SignalMaxW[plast.SignalMaxW.Length-1]);
-                    
+
                     //Проверка на возникноверние пластического шарнира
                     if (FlagPlastSharn)
                     {
@@ -4433,8 +4491,7 @@ namespace Decoder
                                 {
                                     FlagPlastSharn = false;
                                     Console.WriteLine(Q * i);
-                                    WriteNumberInFile(Q*i, "QPSh_"+Form);
-                                    WriteNumberInFile(plast.mW, "QPSh_" + Form);
+                                    WriteNumberInFile(Q * i, plast.mW, "QPSh_" + Form);
                                     WriteMassivInFile(plast.Eii, 0, String.Format("EiiPSh_{0}_", 0) + Form);
                                     WriteMassivInFile(plast.Eii, sloi, String.Format("EiiPSh_{0}_", sloi) + Form);
                                     WriteMassivInFile(plast.Eii, P - 3, String.Format("EiiPSh_{0}_", P - 3) + Form);
@@ -4442,7 +4499,7 @@ namespace Decoder
                                     for (int i2 = 0; i2 < P * 2 - 1; i2++)
                                         for (int k2 = 0; k2 < N; k2++)
                                             granb[i2, k2] = plast.Eii[k2, 0, i2];
-                                    WriteMassivInFile(granb, "granb 0",true);
+                                    WriteMassivInFile(granb, "granb 0", true);
                                 }
                             }
                     }
@@ -4459,8 +4516,8 @@ namespace Decoder
                         for (int i2 = 0; i2 < P * 2 - 1; i2++)
                             for (int k2 = 0; k2 < N; k2++)
                                 granb[i2, k2] = plast.Eii[k2, 0, i2];
-                        WriteMassivInFile(granb, "granb 0",true);
-                        WriteMassivInFile(plast.PrintW,"Progib",true);
+                        WriteMassivInFile(granb, "granb 0", true);
+                        WriteMassivInFile(plast.PrintW, "Progib", true);
                     }
                     //Первое проявление нелинейности
                     if (FlagFirstNonlinear)
@@ -4475,8 +4532,7 @@ namespace Decoder
                                     {
                                         FlagFirstNonlinear = false;
                                         Console.WriteLine(Q * i);
-                                        WriteNumberInFile(Q * i, "QFN_" + Form);
-                                        WriteNumberInFile(plast.mW, "QFN_" + Form);
+                                        WriteNumberInFile(Q * i, plast.mW, "QFN_" + Form);
                                         WriteMassivInFile(plast.Eii, 0, String.Format("EiiFN_{0}_", 0) + Form);
                                         WriteMassivInFile(plast.Eii, sloi, String.Format("EiiFN_{0}_", sloi) + Form);
                                         WriteMassivInFile(plast.Eii, P - 3, String.Format("EiiFN_{0}_", P - 3) + Form);
@@ -4491,11 +4547,11 @@ namespace Decoder
                     plast.RELoad();
                 }
             }
-
-
             stopwatch.Stop();
             Console.WriteLine("Затрачиваемое время " + stopwatch.ElapsedMilliseconds + " мс");
             Console.WriteLine(Form);
+
+            
             Console.WriteLine("КОНЕЦ ПРОГРАММЫ");
             Console.ReadKey();
         }
