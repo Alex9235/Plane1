@@ -105,14 +105,15 @@ namespace Decoder
 
         static void Main(string[] args)
         {
+            
             // наилучшие 30 30 6
             // начальные данные 
             int N = 30;
             int M = 30;
-            int P = 4;//(2*P-1)   
+            int P = 7;//(2*P-1)   
             double n = 1;
             double m = 1;
-            double p = 0.05; //0.05
+            double p = 0.05; //0.05   0.039935;
             double nu = 0;// коэффициент Пуассона
             double sigmas = 0; //предел текучести 
             double es = 0; //деформация текучести она получается за счёт предела текучести и модуля сдвига es=sigmas/(3*G0) 
@@ -139,6 +140,8 @@ namespace Decoder
             double[] PrintW2Y = new double[M];
             double[] PrintWX = new double[N];
             double[] PrintWY = new double[M];
+            //массив для двойного интегралла
+            double DoubleInt = 0;
             //Ессли задача связанна со временем
             double t0 = 0;
             double t1 = 0;
@@ -147,15 +150,15 @@ namespace Decoder
             double nu1 = 0.24; //коэффициент Пуассонта материала
             double E1 = 320000; //модуль юнга материала
             double RaspredGradient = 0; // коэффициент определяющий тип распределение градиента.
-            double Poristostb = 0; // коэффициент пористости
-            int ModelPoristostb = 0; // модель пористости (4)
+            double Poristostb = 0.4; // коэффициент пористости
+            int ModelPoristostb = 1; // модель пористости (4) (1) x-P (2)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
 
 
             // определяющие параметры используемы при счёте
-            int model = 22 ;
+            int model = 26;
             // тип граничных условий
-            int typeGrandIF = 1;
+            int typeGrandIF = 2;
             //Тип нагрузки
             int typeQ = 1;
             // Метод 
@@ -166,15 +169,16 @@ namespace Decoder
             int a = 9;
             // данные по керамике
             //Режим счёта с одной нагрузкой и множеством
-            bool flagNagruzki = true;
+            bool flagNagruzki = false;
             int U1 = 0; // начальное знавение нагрузки 
             int U2 = 400; // коненчное значение нагрузки 
-            double Q = 50; //шаг нагрузки
+            double Q = 1; //шаг нагрузки
             // https://www.lib.tpu.ru/fulltext/v/Bulletin_TPU/2006/v309/i2/06.pdf
-            //for (model = 21; model <= 25; model++)
-            //{
+            for (double bet = 0; bet <= 0; bet += 0.01)
+            {
                 // создаю объект класса БАЛКА
-                Plane plast = new Plane(N, M, P, n, m, p);
+                //PlaneSheremeteva_Peleha plast = new PlaneSheremeteva_Peleha(N, M, P, n, m, p);
+                PlaneKirgofa plast = new PlaneKirgofa(N, M, P, n, m, p);
                 // типы исследуемых моделей
                 switch (model)
                 {
@@ -183,11 +187,12 @@ namespace Decoder
                         nu = 0.314;
                         G0 = 26490;
                         sigmas = 98.0665;
+                        //sigmas = 0.003702;
                         es = 0.001234;
-                        l = 0.5;
+                        //l = 0.5;
                         plast.InicializationPlast(nu, G0);
                         plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                        plast.InicializationNano(l);
+                        //plast.InicializationNano(l);
                         break;
                     case 2:
                         //steel T=0
@@ -469,9 +474,9 @@ namespace Decoder
                         es = 0.00263539;
                         plast.InicializationExpFizicalNonlinProblem(sigmas, es);
                         //пористость
-                        Poristostb = 0.4;
-                        ModelPoristostb = 1;
-                        plast.InicializationPorisoty(Poristostb, ModelPoristostb);
+                        //Poristostb = 0.4;
+                        //ModelPoristostb = 1;
+                        //plast.InicializationPorisoty(Poristostb, ModelPoristostb);
                         //коэффициент линейного температурного расширения
                         //l = 0.5;
                         //plast.InicializationNano(l);
@@ -484,16 +489,16 @@ namespace Decoder
                         sigmas = 710.605;
                         es = 0.00263539;
                         plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                        //пористость
-                        Poristostb = 0.4;
-                        ModelPoristostb = 1;
-                        plast.InicializationPorisoty(Poristostb, ModelPoristostb);
+                    //пористость
+                        //Poristostb = 0.4;
+                        //ModelPoristostb = 1;
+                        //plast.InicializationPorisoty(Poristostb, ModelPoristostb);
                         alf = 0.000018; //коэффициент линейного температурного расширения
                         plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/Rtemp_2100.txt",
-                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
-                        //l = 0;
-                        //plast.InicializationNano(l);
-                        break;
+                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012,bet);
+                    //l = 0;
+                    //plast.InicializationNano(l);
+                    break;
                     case 23:
                         // для экспоненциального!!!
                         G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
@@ -502,16 +507,16 @@ namespace Decoder
                         sigmas = 710.605;
                         es = 0.00263539;
                         plast.InicializationExpFizicalNonlinProblem(sigmas, es);
-                        //пористость
-                        Poristostb = 0.4;
-                        ModelPoristostb = 1;
-                        plast.InicializationPorisoty(Poristostb, ModelPoristostb);
+                    //пористость
+                        //Poristostb = 0.4;
+                        //ModelPoristostb = 1;
+                        //plast.InicializationPorisoty(Poristostb, ModelPoristostb);
                         alf = 0.000018; //коэффициент линейного температурного расширения
-                        plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_400.txt",
-                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
-                        //l = 0;
-                        //plast.InicializationNano(l);
-                        break;
+                        plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/локальная_400_15х15.txt",
+                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012, bet);
+                    //l = 0;
+                    //plast.InicializationNano(l);
+                    break;
                     case 24:
                         // для экспоненциального!!!
                         G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
@@ -525,11 +530,11 @@ namespace Decoder
                         ModelPoristostb = 1;
                         plast.InicializationPorisoty(Poristostb, ModelPoristostb);
                         alf = 0.000018; //коэффициент линейного температурного расширения
-                        plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_500.txt",
-                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
-                        //l = 0;
-                        //plast.InicializationNano(l);
-                        break;
+                            plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_500.txt",
+                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012, bet);
+                    //l = 0;
+                    //plast.InicializationNano(l);
+                    break;
                     case 25:
                         // для экспоненциального!!!
                         G0 = 103707.4647;//коэффициент модуля сдвига для сжатия
@@ -544,8 +549,23 @@ namespace Decoder
                         plast.InicializationPorisoty(Poristostb, ModelPoristostb);
                         alf = 0.000018; //коэффициент линейного температурного расширения
                         plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/temp_600.txt",
-                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012);
+                            "C:/Users/proto/Documents/GitHub/Plane1/Распр s(e,t).txt", alf, 273.15, 873.15, 0, 0.012, bet);
                         //l = 0;
+                        //plast.InicializationNano(l);
+                        break;
+                     case 26:
+                        //sus 304
+                        nu = 0.3;
+                        G0 = 75769;
+                        G1 = 2026;
+                        //sigmas = 98.0665;
+                        //sigmas = 0.003702;
+                        es = 0.00089822;
+                        //l = 0.5;
+                        plast.InicializationPlast(nu, G0);
+                        plast.InicializationLinearyHard(G1, es);
+                        plast.InicializationPorisoty(Poristostb,ModelPoristostb);
+                        //plast.InicializationHumidity(0.05, 0.0005);
                         //plast.InicializationNano(l);
                         break;
                     default: break;
@@ -664,8 +684,8 @@ namespace Decoder
 
 
                         // эпюр прогиба
-                        //for (int x = 1; x < N + 1; x++)
-                        //    PrintWX[x - 1] = plast.W[x, M / 2];
+                        for (int x = 1; x < N + 1; x++)
+                            PrintWX[x - 1] = plast.W[x, M / 2];
 
                         //// эпюр моментов
                         //for (int x = 1; x < N + 1; x++)
@@ -675,6 +695,40 @@ namespace Decoder
                         //for (int y = 1; y < M + 1; y++)
                         //    PrintW2Y[y - 1] = (plast.W[N / 2, y - 1] - 2 * plast.W[N / 2, y] + plast.W[N / 2, y + 1]) / (dy * dy);
 
+                        //Двойной интеграл
+                        //double[] IntMasxX = new double[M];
+                        //double Integral = 0;
+                        //double dx = n / (N - 1);
+                        //double dy = m / (M - 1);
+                        //for (int y = 0; y < M; y++)
+                        //{
+                        //    for (int x = 0; x < N; x += 2)
+                        //    {
+                        //        if (N - x == 2)
+                        //        {
+                        //            IntMasxX[y] += (plast.W[N + 1, y + 1] + plast.W[N, y + 1]) * dx / 2;
+                        //            break;
+                        //        }
+                        //        //формула Симсона
+                        //        IntMasxX[y] += (plast.W[x + 1, y + 1] + 4 * plast.W[x + 2, y + 1] + plast.W[x + 3, y + 1]) * 2 * dx / 6;
+
+                        //    }
+                        //}
+                        //for (int y = 0; y < M; y+=2)
+                        //{
+                        //    if (M - y == 2)
+                        //    {
+                        //        Integral += (IntMasxX[M - 1] + IntMasxX[M - 2]) * dy / 2;
+                        //        break;
+                        //    }
+                        //    Integral+= (IntMasxX[y] + 4 * IntMasxX[y+1] + IntMasxX[y+2]) * 2 * dy / 6;
+                        //}
+                        
+                        //WriteNumberInFile(Integral, "Integral" + Form);
+                        // 
+
+                        //    PrintW2Y[y - 1] = (plast.W[N / 2, y - 1] - 2 * plast.W[N / 2, y] + plast.W[N / 2, y + 1]) / (dy * dy);
+
 
 
                         WriteNumberInFile(plast.MaximumCountIterationOfMethodAllDecision, "IM_" + Form);
@@ -682,6 +736,15 @@ namespace Decoder
                         WriteNumberInFile(plast.CountIterationPhisicalNoneleneary, "FI_" + Form);
 
                         WriteNumberInFile(plast.mW, "mW_" + Form);
+
+                        WriteMassivInFile(PrintWX, "PW" + Form);
+
+                        //WriteNumberInFile(plast.Eii[14,14,0], "0.5_0.5_0" + Form);
+                        //WriteNumberInFile(plast.Eii[6, 14, 0], "0.2_0.5_0" + Form);
+                        //WriteNumberInFile(plast.Eii[6, 6, 0], "0.2_0.2_0" + Form);
+                        //WriteNumberInFile(plast.Eii[14, 14, 1], "0.5_0.5_1" + Form);
+                        //WriteNumberInFile(plast.Eii[6, 14, 1], "0.2_0.5_1" + Form);
+                        //WriteNumberInFile(plast.Eii[6, 6, 1], "0.2_0.2_1" + Form);
 
                         // Вывод в консоле
 
@@ -731,7 +794,7 @@ namespace Decoder
                         if (flagNagruzki)
                         {
                             WriteNumberInFile(Q * i, "Q_" + Form);
-                            WriteNumberInFile(plast.mW, "Q_" + Form);
+                            WriteNumberInFile(plast.mW, "Q_W" + Form);
                             WriteMassivInFile(plast.Eii, 0, String.Format("Eii_{0}_", 0) + Form);
                             WriteMassivInFile(plast.Eii, sloi, String.Format("Eii_{0}_", sloi) + Form);
                             WriteMassivInFile(plast.Eii, P - 2, String.Format("Eii_{0}_", P - 2) + Form);
@@ -768,6 +831,7 @@ namespace Decoder
                         }
                         //условие выхода из цикла расчёта
                         if (plast.CountIterationPhisicalNoneleneary >= 1000 || plast.mW > 0.3) break;
+                        //RasspredDiform(plast.Eii, 2.25, "2.25");
                         plast.RELoad();
                     }
                 }
@@ -775,9 +839,9 @@ namespace Decoder
                 Console.WriteLine("Затрачиваемое время " + stopwatch.ElapsedMilliseconds + " мс");
                 Console.WriteLine(Form);
 
-            //    Console.WriteLine(model);
-            //}
-
+                Console.WriteLine(bet);
+            }
+            //RasspredDiform(plast.Eii, 1, "1");
             Console.WriteLine("КОНЕЦ ПРОГРАММЫ");
                 Console.ReadKey();
         }
