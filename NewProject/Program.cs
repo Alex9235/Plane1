@@ -153,12 +153,13 @@ namespace Decoder
             double Poristostb = 0.4; // коэффициент пористости
             int ModelPoristostb = 1; // модель пористости (4) (1) x-P (2)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
+            double C = 0.05; //величина влажности 
 
 
             // определяющие параметры используемы при счёте
             int model = 26;
             // тип граничных условий
-            int typeGrandIF = 2;
+            int typeGrandIF = 3;
             //Тип нагрузки
             int typeQ = 1;
             // Метод 
@@ -564,8 +565,9 @@ namespace Decoder
                         //l = 0.5;
                         plast.InicializationPlast(nu, G0);
                         plast.InicializationLinearyHard(G1, es);
-                        plast.InicializationPorisoty(Poristostb,ModelPoristostb);
-                        //plast.InicializationHumidity(0.05, 0.0005);
+                        //plast.InicializationHumidity(C, 0.0005);
+                        plast.InicializationPorisoty(Poristostb, ModelPoristostb);
+
                         //plast.InicializationNano(l);
                         break;
                     default: break;
@@ -621,8 +623,8 @@ namespace Decoder
                 //WriteMassivInFile(plast.T, 3, "Temp " + 3);
 
                 int flag1 = 0;
-                string Form = String.Format("TQ{0}_TIF{1}_bg{2}_Met{3}_n{4}m{5}p{6}_Q{7}_N{8}M{9}P{10}_t0{11}t1{12}dis{13}_L{14}_model{15}_RG{16}_Modpor{17}_MFP{18}",
-                            typeQ, typeGrandIF, a, TypeMethod, n, m, p, Q, N, M, 2 * P - 1, t0, t1, dissipation, l, model, RaspredGradient, ModelPoristostb, ModelFunctionСurvilinearPlane);
+                string Form = String.Format("TQ{0}_TIF{1}_bg{2}_Met{3}_n{4}m{5}p{6}_Q{7}_N{8}M{9}P{10}_t0{11}t1{12}dis{13}_L{14}_model{15}_RG{16}_Modpor{17}_MFP{18}_C{19}",
+                            typeQ, typeGrandIF, a, TypeMethod, n, m, p, Q, N, M, 2 * P - 1, t0, t1, dissipation, l, model, RaspredGradient, ModelPoristostb, ModelFunctionСurvilinearPlane,C);
                 //}
                 if (true)
                 {

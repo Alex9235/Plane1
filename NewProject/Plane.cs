@@ -245,7 +245,7 @@ namespace Decoder
                 Console.WriteLine("Temperature can't job whis CurvilinearPlane");
                 return;
             }
-            if (bet <= 0 || bet > 1)
+            if (bet <= 0 || bet > 1 || QWater <=0)
             {
                 ErrorEnterConstructorParametrs();
                 return;
@@ -254,6 +254,7 @@ namespace Decoder
             this.FlagHumidity = true;
             if (!FlagPorysotyProblem && !FlagGradientProblem)
                 LoadBetaFULL(bet);
+            
             LoadCFULL(QWater);
         }
         //Инициализация градиентного добавочного материала
