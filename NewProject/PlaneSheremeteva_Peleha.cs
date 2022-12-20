@@ -405,13 +405,13 @@ namespace Decoder
             LoadE();
             if (FlagPorysotyProblem)
             {
-                PoritostbLoadNU();
-                PoritostbLoadE();
+                Porisoty(NU);
+                Porisoty(E);
             }
             if (FlagGradientProblem)
             {
-                GradientLoadE();
-                GradientLoadNU();
+                Gradient(NU, GradientNU);
+                Gradient(E, GradientE);
             }
 
             //подсчёт моментов
@@ -443,13 +443,13 @@ namespace Decoder
             //ShowMassiv3CentrR3(E, 0);
             if (FlagPorysotyProblem)
             {
-                PoritostbLoadNU();
-                PoritostbLoadE();
+                Porisoty(NU);
+                Porisoty(E);
             }
             if (FlagGradientProblem)
             {
-                GradientLoadE();
-                GradientLoadNU();
+                Gradient(NU, GradientNU);
+                Gradient(E, GradientE);
             }
             //ShowMassiv2(E);
             //подсчёт моментов

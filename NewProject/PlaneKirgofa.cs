@@ -340,10 +340,14 @@ namespace Decoder
                 {
                     S = 0;
                     //Формула симсона
+                    //for (int z = 1; z < P; z = z + 2)
+                    //    S = S + (E[x, y, z - 1] * C[x, y, z - 1] * (z - (P - 1) / 2 - 1) / (1 - NU[x, y, z - 1])
+                    //             + 4 * E[x, y, z] * C[x, y, z] * (z - (P - 1) / 2) / (1 - NU[x, y, z])
+                    //             + E[x, y, z + 1] * C[x, y, z + 1] * (z - (P - 1) / 2 + 1) / (1 - NU[x, y, z + 1])) * DZ[x, y] * DZ[x, y] / 3;
                     for (int z = 1; z < P; z = z + 2)
-                        S = S + (E[x, y, z - 1] * C[x, y, z - 1] * (z - (P - 1) / 2 - 1) / (1 - NU[x, y, z - 1])
-                                 + 4 * E[x, y, z] * C[x, y, z] * (z - (P - 1) / 2) / (1 - NU[x, y, z])
-                                 + E[x, y, z + 1] * C[x, y, z + 1] * (z - (P - 1) / 2 + 1) / (1 - NU[x, y, z + 1])) * DZ[x, y] * DZ[x, y] / 3;
+                        S = S + (E[x, y, z - 1] * C[x, y, z - 1] * Math.Abs(z - (P - 1) / 2 - 1) / (1 - NU[x, y, z - 1])
+                                 + 4 * E[x, y, z] * C[x, y, z] * Math.Abs(z - (P - 1) / 2) / (1 - NU[x, y, z])
+                                 + E[x, y, z + 1] * C[x, y, z + 1] * Math.Abs(z - (P - 1) / 2 + 1) / (1 - NU[x, y, z + 1])) * DZ[x, y] * DZ[x, y] / 3;
                     if (Math.Abs(S) < 0.0000000001) S = 0;
                     JM[x + 1, y + 1] = S;
                     
@@ -381,31 +385,37 @@ namespace Decoder
 
             //обнуление прогибов
             LoadW();
-            // для начала забиваем коэффициент пуассона 
-            for (int x = 0; x < N; x++)
-                for (int y = 0; y < M; y++)
-                    for (int z = 0; z < P; z++)
-                        NU[x, y, z] = nu;
             //вычисление деформции
             LoadEii();
+            // для начала забиваем коэффициент пуассона 
+            LoadNU();
+
+            
             //вычисление модулей юнга 
             LoadE();
-            if (FlagPorysotyProblem)
-            {
-                PoritostbLoadNU();
-                PoritostbLoadE();
-            }
+            
+
             if (FlagGradientProblem)
             {
-                GradientLoadE();
-                GradientLoadNU();
+                Gradient(NU, GradientNU);
+                Gradient(E, GradientE);
             }
-
+            //пористость применяется в самом конце так как это множитель
+            if (FlagPorysotyProblem)
+            {
+                Porisoty(NU);
+                Porisoty(E);
+            }
+            
             //подсчёт моментов
             if (FlagTemperatureProblem)
+            {
                 LoadI();
+            }
             if (FlagHumidity)
+            {
                 LoadJ();
+            }
 
             LoadD();
             LoadR();
@@ -424,20 +434,25 @@ namespace Decoder
             LoadNU();
             //вычисление новых модулей Юнга
             LoadE();
-            if (FlagPorysotyProblem)
-            {
-                PoritostbLoadNU();
-                PoritostbLoadE();
-            }
+ 
             if (FlagGradientProblem)
             {
-                GradientLoadE();
-                GradientLoadNU();
+                Gradient(NU, GradientNU);
+                Gradient(E, GradientE);
+            }
+            if (FlagPorysotyProblem)
+            {
+                Porisoty(NU);
+                Porisoty(E);
             }
             //ShowMassiv2(E);
             //подсчёт моментов
             if (FlagTemperatureProblem)
                 LoadI();
+            //ShowMassiv3CentrR3(Eii, 0);
+            //ShowMassiv3CentrR3(E, 0);
+            //ShowMassiv3CentrR3(NU, 0);
+            //ShowMassiv2(IM);
             if (FlagHumidity)
                 LoadJ();
             LoadD();
@@ -1286,8 +1301,8 @@ namespace Decoder
                     Jd2y = 0;
                     if (FlagHumidity)
                     {
-                        Jd2x = (JM[i + 1, j] - 2 * JM[i, j] + IM[i - 1, j]) / (dx * dx);
-                        Jd2y = (JM[i, j + 1] - 2 * JM[i, j] + IM[i, j - 1]) / (dy * dy);
+                        Jd2x = (JM[i + 1, j] - 2 * JM[i, j] + JM[i - 1, j]) / (dx * dx);
+                        Jd2y = (JM[i, j + 1] - 2 * JM[i, j] + JM[i, j - 1]) / (dy * dy);
                     }
                     if (FlagTemperatureProblem)
                     {
@@ -1296,11 +1311,11 @@ namespace Decoder
                     }
                     if (xy)
                     {
-                        return -AB[i + 1] * (Id2x + lam * lam * Id2y + Jd2x + lam * lam * Jd2y - F[i - 1, j - 1]);
+                        return AB[i + 1] * (F[i - 1, j - 1] - Id2x - lam * lam * Id2y - Jd2x - lam * lam * Jd2y);
                     }
                     else
                     {
-                        return -AB[j + 1] * (Id2x + lam * lam * Id2y + Jd2x + lam * lam * Jd2y - F[i - 1, j - 1]);
+                        return AB[j + 1] * (F[i - 1, j - 1] - Id2x - lam * lam * Id2y - Jd2x - lam * lam * Jd2y);
                     }
                 default: return 0;
 
@@ -1682,6 +1697,7 @@ namespace Decoder
                 ABxy = new double[6, N - 2];
                 // находим переменные функции стоящие при производных в ДУ.
                 Pn(ABxy, B, false, F.F);
+                //ShowMassiv2(ABxy,5);
                 // находим решение уравнения методом гаусса жордана
                 A = SolutionProblemMetodGaussaForVariationIteration(dx, ABxy, TypeBorder4, TypeBorder2);
                 // относительно граничного условия и кубической интерполяцией задаём заграничные значения.
@@ -1690,6 +1706,7 @@ namespace Decoder
                 //Переопределение массивов
                 ABxy = new double[6, M -2];
                 Pn(ABxy, A, true, F.F);
+                //ShowMassiv2(ABxy, 5);
                 B = SolutionProblemMetodGaussaForVariationIteration(dy, ABxy, TypeBorder3, TypeBorder1);
                 //граничные условия
                 BorderZadelSharnkMVIW(B, dy, m, TypeBorder3, TypeBorder1);
