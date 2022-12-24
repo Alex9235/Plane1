@@ -345,9 +345,9 @@ namespace Decoder
                     //             + 4 * E[x, y, z] * C[x, y, z] * (z - (P - 1) / 2) / (1 - NU[x, y, z])
                     //             + E[x, y, z + 1] * C[x, y, z + 1] * (z - (P - 1) / 2 + 1) / (1 - NU[x, y, z + 1])) * DZ[x, y] * DZ[x, y] / 3;
                     for (int z = 1; z < P; z = z + 2)
-                        S = S + (E[x, y, z - 1] * C[x, y, z - 1] * Math.Abs(z - (P - 1) / 2 - 1) / (1 - NU[x, y, z - 1])
-                                 + 4 * E[x, y, z] * C[x, y, z] * Math.Abs(z - (P - 1) / 2) / (1 - NU[x, y, z])
-                                 + E[x, y, z + 1] * C[x, y, z + 1] * Math.Abs(z - (P - 1) / 2 + 1) / (1 - NU[x, y, z + 1])) * DZ[x, y] * DZ[x, y] / 3;
+                        S = S + (E[x, y, z - 1] * C[x, y, z - 1] * (z - (P - 1) / 2 - 1) / (1 - NU[x, y, z - 1])
+                                 + 4 * E[x, y, z] * C[x, y, z] * (z - (P - 1) / 2) / (1 - NU[x, y, z])
+                                 + E[x, y, z + 1] * C[x, y, z + 1] * (z - (P - 1) / 2 + 1) / (1 - NU[x, y, z + 1])) * DZ[x, y] * DZ[x, y] / 3;
                     if (Math.Abs(S) < 0.0000000001) S = 0;
                     JM[x + 1, y + 1] = S;
                     
@@ -455,6 +455,7 @@ namespace Decoder
             //ShowMassiv2(IM);
             if (FlagHumidity)
                 LoadJ();
+            //ShowMassiv2(JM);
             LoadD();
             LoadR();
             LoadS();
@@ -1711,14 +1712,15 @@ namespace Decoder
                 //граничные условия
                 BorderZadelSharnkMVIW(B, dy, m, TypeBorder3, TypeBorder1);
 
-
+                int memberi = 0;
+                int memberj = 0;
                 CountIterationInMethods++;
                 for (int i = 0; i < N + 2; i++)
                     for (int j = 0; j < M + 2; j++)
                     {
                         if (Math.Abs(W[i, j] - A[i + 1] * B[j + 1]) > MaxWForMethodIteration1) MaxWForMethodIteration1 = Math.Abs(W[i, j] - A[i + 1] * B[j + 1]);// нахождение максмального отклонения найденного решения.
                         W[i, j] = A[i + 1] * B[j + 1];
-                        if (Math.Abs(W[i, j]) > MaxWForMethodIteration2) MaxWForMethodIteration2 = Math.Abs(W[i, j]); // Нахождение максимального прогиба
+                        if (Math.Abs(W[i, j]) > Math.Abs(MaxWForMethodIteration2)) MaxWForMethodIteration2 = W[i, j]; // Нахождение максимального прогиба
                     }
                 if (Math.Abs(MaxWForMethodIteration1) < 0.0000001) break;
             }
@@ -2716,7 +2718,8 @@ namespace Decoder
                         //if (Math.Abs(W[i, j]) > MaxWForMethodIteration2) MaxWForMethodIteration2 = Math.Abs(W[i, j]); // Нахождение максимального прогиба
                     }
 
-                if (Math.Abs(MaxWForMethodIteration1) < epsilon || Math.Abs(MaxWForMethodIteration1) > 100) break;
+                if (Math.Abs(MaxWForMethodIteration1) < epsilon || Math.Abs(MaxWForMethodIteration1) > 100) 
+                    break;
 
                 //ShowMassiv2(W);
                 //Console.WriteLine(mW+" "+ CountIterationPhisicalNoneleneary);

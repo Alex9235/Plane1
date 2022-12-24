@@ -384,10 +384,7 @@ namespace Decoder
             this.FlagTemperatureProblem = true;
 
             LoadAlfFULL(alf);
-            double bet = 1;
-            LoadTFULL(PathTemp, bet);
-
-
+            LoadTFULL(PathTemp, 1);
         } 
         public void InicializationTempatureInversion(String PathTemp, double alf)
         {
@@ -498,7 +495,30 @@ namespace Decoder
             LoadCFULL(QWater1, QWater2,gamma);
             BezrazmernostbC();
         }
+        public void InicializationHumidity(String PathC, double bet)
+        {
+            if (FlagСurvilinearPlane)
+            {
+                ErrorEnterConstructorParametrs();
+                Console.WriteLine("Temperature can't job whis CurvilinearPlane");
+                return;
+            }
+            if (bet <= 0 || bet > 1)
+            {
+                ErrorEnterConstructorParametrs();
+                return;
+            }
+
+            this.FlagHumidity = true;
+            if (!FlagPorysotyProblem && !FlagGradientProblem)
+                LoadBetaFULL(bet);
+
+            LoadCFULL(PathC,0.1);
+            //SymmetriInversionMassivCenterPlane(C);
+            BezrazmernostbC();
+        }
         //Инициализация градиентного добавочного материала
+        //влажность локальная_400_21x21_30x30x19_300-400_(20)
         public void InicializationVariationGradient(double ConstRaspredGradient, double NU1, double E1)
         {
             if (ConstRaspredGradient <= 0 || FlagTemperatureProblem)
@@ -1021,22 +1041,14 @@ namespace Decoder
                 //ShowMassiv2(T);
             }
         }
-
-        private void LoadTFULL(double ConstTemp)
-        {
-            for (int x = 0; x < N; x++)
-                for (int y = 0; y < M; y++)
-                    for (int z = 0; z < P; z++)
-                        T[x, y, z] = ConstTemp ;
-        }
-        private void LoadTFULL(String PathTemp, double a)
+        private void LoadFileMassiv(String PathTemp,double[,,] Massive)
         {
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
             FileStream file1 = new FileStream(PathTemp, FileMode.Open); //создаем файловый поток
             StreamReader reader = new StreamReader(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
             string s = "";
             while (s != "% Data")
-                s = ""+reader.ReadLine();
+                s = "" + reader.ReadLine();
             int x;
             for (int z = 0; z < P; z++)
 
@@ -1048,12 +1060,34 @@ namespace Decoder
                     {
                         if (number != "")
                         {
-                            T[x, y, z] = Convert.ToDouble(number) *a;
+                            Massive[x, y, z] = Convert.ToDouble(number);
                             x++;
                         }
                     }
                 }
             reader.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
+        }
+
+        private void LoadTFULL(double ConstTemp)
+        {
+            for (int x = 0; x < N; x++)
+                for (int y = 0; y < M; y++)
+                    for (int z = 0; z < P; z++)
+                        T[x, y, z] = ConstTemp ;
+        }
+        private void LoadTFULL(String PathTemp, double a)
+        {
+            LoadFileMassiv(PathTemp, T);
+            for (int i = 0; i < T.GetLength(0); i++)
+            {
+                for (int j = 0; j < T.GetLength(1); j++)
+                {
+                    for (int k = 0; k < T.GetLength(2); k++)
+                    {
+                        T[i, j, k] = T[i, j, k] * a;
+                    }
+                }
+            }
         }
         private void LoadTFULL(double ConstTemp1, double ConstTemp2, double gamma)
         {
@@ -1129,6 +1163,20 @@ namespace Decoder
                             C[x, y, z] = ConstCemp1 + (ConstCemp2 - ConstCemp1) * FunctionGradientT(x, y, z, gamma);
                         else
                             C[x, y, z] = C[x, y, P - 1 - z];
+        }
+        private void LoadCFULL(String PathC, double a)
+        {
+            LoadFileMassiv(PathC, C);
+            for (int i = 0; i < C.GetLength(0); i++)
+            {
+                for (int j = 0; j < C.GetLength(1); j++)
+                {
+                    for (int k = 0; k < C.GetLength(2); k++)
+                    {
+                        C[i, j, k] = C[i, j, k] * a;
+                    }
+                }
+            }
         }
         private void LoadBetaFULL(double ConstTemp)
         {

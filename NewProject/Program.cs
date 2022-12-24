@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Decoder
 {
@@ -83,6 +84,30 @@ namespace Decoder
 
             writer.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
         }
+        static void WriteMasssiveListInFile(List<double>[] MassiveLists)
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");// смена точки на запятую
+            FileStream file1 = new FileStream("File_Fuul" + ".txt", FileMode.OpenOrCreate); //создаем файловый поток
+            StreamWriter writer = new StreamWriter(file1);//создаем «потоковый писатель» и связываем его с файловым потоком 
+            int MaxlengthLists = 0;
+            foreach (var Mass in MassiveLists)
+                if (MaxlengthLists < Mass.Count) MaxlengthLists = Mass.Count;
+
+            for (int j = 0; j < MaxlengthLists; j++)
+            {
+                //Вывод массива данных в файл
+                for (int i = 0; i < MassiveLists.Length; i++)
+                {
+                    if(j<MassiveLists[i].Count)
+                        writer.Write(String.Format("{0:0.00000000 }", MassiveLists[i][j]));
+                    else
+                        writer.Write("           ");
+ 
+                }
+                writer.WriteLine();
+            }
+            writer.Close(); //закрываем поток. Не закрыв поток, в файл ничего не запишется так как первичная запись идёт в ОЗУ
+        }
         static void RasspredDiform(double[,,] Diff, double esi, string s)
         {
             double[,] Exit = new double[Diff.GetLength(0), Diff.GetLength(1)];
@@ -153,7 +178,7 @@ namespace Decoder
             double Poristostb = 0; // коэффициент пористости
             int ModelPoristostb =0; // модель пористости (4) (1) x-P (2)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
-            double C = 0; //величина влажности 
+            double C = 1; //величина влажности 
             double Cgamma = 0.4;
 
 
@@ -178,8 +203,13 @@ namespace Decoder
             int U2 = 400; // коненчное значение нагрузки 
             double Q = 1; //шаг нагрузки
             // https://www.lib.tpu.ru/fulltext/v/Bulletin_TPU/2006/v309/i2/06.pdf
-            for (double bet = 0; bet < 60; bet++) 
+            int COUNTbet = 12;
+            double[,] MassivePointsFisicalNonlineary = new double[4,COUNTbet];
+            List<double>[] MasiiveOfList = new List<double>[COUNTbet];
+            
+            for (int bet = 0; bet < COUNTbet; bet++) 
             {
+                MasiiveOfList [bet] = new List<double>();
                 switch (bet)
                 {
                     case 0:
@@ -295,7 +325,7 @@ namespace Decoder
                         Poristostb = 0.8;
                         ModelPoristostb = 1;
                         typeGrandIF = 1;
-                        typeT = 0;
+                        typeT = 1;
 
 
                         break;
@@ -1153,7 +1183,10 @@ namespace Decoder
                             //plast.InicializationMultimoduWithExpFizicalNonlinlProblem(sigmas + 100);
 
                             if (C > 0)
-                                plast.InicializationHumidity(C,0,Cgamma, 0.0005);
+                            {
+                                //plast.InicializationHumidity(C, 0, Cgamma, 0.0005);
+                                plast.InicializationHumidity("C:/Users/proto/Documents/GitHub/Plane1/влажность_локальная_400_21x21_30x30x19_300-400_(20).txt", 0.0005);
+                            }
                             switch (typeT)
                             {
                                 case 1:
@@ -1409,6 +1442,8 @@ namespace Decoder
                                             for (int k2 = 0; k2 < N; k2++)
                                                 granb[i2, k2] = plast.Eii[k2, 0, i2];
                                         WriteMassivInFile(granb, "granb 0", true);
+                                        MassivePointsFisicalNonlineary[2, bet] = Q * i;
+                                        MassivePointsFisicalNonlineary[3, bet] = plast.mW;
                                     }
                                 }
                         }
@@ -1448,12 +1483,15 @@ namespace Decoder
                                             WriteMassivInFile(plast.Eii, 0, String.Format("EiiFN_{0}_", 0) + Form);
                                             WriteMassivInFile(plast.Eii, sloi, String.Format("EiiFN_{0}_", sloi) + Form);
                                             WriteMassivInFile(plast.Eii, P - 3, String.Format("EiiFN_{0}_", P - 3) + Form);
-
+                                            MassivePointsFisicalNonlineary[0, bet] = Q * i;
+                                            MassivePointsFisicalNonlineary[1, bet] = plast.mW;
                                         }
                                     }
                                 }
                             }
+                            
                         }
+                        MasiiveOfList[bet].Add(plast.mW);
                         //условие выхода из цикла расчёта
                         if (plast.CountIterationPhisicalNoneleneary >= 1000 || plast.mW > 0.3 || (i != 0 && plast.mW == 0)) break;
                         //RasspredDiform(plast.Eii, 2.25, "2.25");
@@ -1466,10 +1504,15 @@ namespace Decoder
                 Console.WriteLine(Form);
 
                 Console.WriteLine(bet);
+                Thread.Sleep(1000);
+                
             }
+            WriteMassivInFile(MassivePointsFisicalNonlineary, "FuullFisicleNonlineary",false);
+            WriteMasssiveListInFile(MasiiveOfList);
             //RasspredDiform(plast.Eii, 1, "1");
             Console.WriteLine("КОНЕЦ ПРОГРАММЫ");
                 Console.ReadKey();
+            
         }
     }
 }
