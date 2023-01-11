@@ -92,16 +92,19 @@ namespace Decoder
             int MaxlengthLists = 0;
             foreach (var Mass in MassiveLists)
                 if (MaxlengthLists < Mass.Count) MaxlengthLists = Mass.Count;
-
+            bool FlagForNegativeW = false;
             for (int j = 0; j < MaxlengthLists; j++)
             {
                 //Вывод массива данных в файл
                 for (int i = 0; i < MassiveLists.Length; i++)
                 {
                     if(j<MassiveLists[i].Count)
-                        writer.Write(String.Format("{0:0.00000000 }", MassiveLists[i][j]));
+                        if(MassiveLists[i][j]<0)
+                            writer.Write(String.Format("{0:0.00000000} ", MassiveLists[i][j]));
+                        else
+                            writer.Write(String.Format(" {0:0.00000000} ", MassiveLists[i][j]));
                     else
-                        writer.Write("           ");
+                        writer.Write("            ");
  
                 }
                 writer.WriteLine();
@@ -176,40 +179,42 @@ namespace Decoder
             double E1 = 348430; //модуль юнга материала
             double RaspredGradient = 0; // коэффициент определяющий тип распределение градиента.
             double Poristostb = 0; // коэффициент пористости
-            int ModelPoristostb =0; // модель пористости (4) (1) x-P (2)
+            int ModelPoristostb = 0; // модель пористости (4) (1) x-P (2)
             int ModelFunctionСurvilinearPlane = 0; // модель криволиненой поверхности пластинки
-            double C = 1; //величина влажности 
-            double Cgamma = 0.4;
+            double C = 3; //величина влажности 
+            double Cgamma = 0;
 
 
             // определяющие параметры используемы при счёте
             int model = 26;
             // тип граничных условий
-            int typeGrandIF = 3;
+            int typeGrandIF = 1;
             //Тип нагрузки
             int typeQ = 1;
             // Метод 
             int TypeMethod = 1;
             // Слой печатания
-            int sloi = 1;
-            // Тип темпераутры
+            int sloi = 5;
+            // Тип темпераутры 
             int typeT = 0;
             //количество коэф бубнова галёркин
             int a = 9;
             // данные по керамике
             //Режим счёта с одной нагрузкой и множеством
-            bool flagNagruzki = false;
+            bool flagNagruzki = true;
             int U1 = 0; // начальное знавение нагрузки 
             int U2 = 400; // коненчное значение нагрузки 
-            double Q = 1; //шаг нагрузки
+            double Q = 20; //шаг нагрузки
             // https://www.lib.tpu.ru/fulltext/v/Bulletin_TPU/2006/v309/i2/06.pdf
-            int COUNTbet = 12;
-            double[,] MassivePointsFisicalNonlineary = new double[4,COUNTbet];
+            int COUNTbet = 4;
+            int countb = 0;
+            double[,] MassivePointsFisicalNonlineary = new double[4, COUNTbet];
             List<double>[] MasiiveOfList = new List<double>[COUNTbet];
             
-            for (int bet = 0; bet < COUNTbet; bet++) 
+            for (int bet = 0; bet < 4; bet++) 
             {
-                MasiiveOfList [bet] = new List<double>();
+
+                MasiiveOfList [countb] = new List<double>();
                 switch (bet)
                 {
                     case 0:
@@ -735,7 +740,108 @@ namespace Decoder
                         typeGrandIF = 3;
                         typeT = 4;
                         break;
-                    default: break;
+
+                    case 60:
+                        RaspredGradient = 0;
+                        Poristostb = 0;
+                        ModelPoristostb = 0;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.3; 
+                        break;
+                    case 61:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 1;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.3;
+
+
+                        break;
+                    case 62:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 2;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.3;
+                        break;
+                    case 63:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 3;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.3;
+                        break;
+                    case 64:
+                        RaspredGradient = 0;
+                        Poristostb = 0;
+                        ModelPoristostb = 0;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.5;
+                        break;
+                    case 65:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 1;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.5;
+
+
+                        break;
+                    case 66:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 2;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.5;
+                        break;
+                    case 67:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 3;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.5;
+                        break;
+                    case 68:
+                        RaspredGradient = 0;
+                        Poristostb = 0;
+                        ModelPoristostb = 0;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.7;
+                        break;
+                    case 69:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 1;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.7;
+                        break;
+                    case 70:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 2;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.7;
+                        break;
+                    case 71:
+                        RaspredGradient = 0.1;
+                        Poristostb = 0.8;
+                        ModelPoristostb = 3;
+                        typeGrandIF = 3;
+                        typeT = 4;
+                        l = 0.7;
+                        break;
+
                 }
                 // создаю объект класса БАЛКА
                 //PlaneSheremeteva_Peleha plast = new PlaneSheremeteva_Peleha(N, M, P, n, m, p);
@@ -1176,7 +1282,7 @@ namespace Decoder
                             //sigmas = 0.003702;
                             sigmas = 220;
                             //es = 0.00089822;
-                            //l = 0.5;
+                            l = 0.5;
                             plast.InicializationPlast(nu, G0);
                             plast.InicializationExpFizicalNonlinProblem(sigmas);
                             //plast.InicializationMultimodulProblem(nu, G0);
@@ -1185,26 +1291,37 @@ namespace Decoder
                             if (C > 0)
                             {
                                 //plast.InicializationHumidity(C, 0, Cgamma, 0.0005);
-                                plast.InicializationHumidity("C:/Users/proto/Documents/GitHub/Plane1/влажность_локальная_400_21x21_30x30x19_300-400_(20).txt", 0.0005);
+                                plast.InicializationHumidity("C:/Users/proto/Documents/GitHub/Plane1/локальная_1_21x21_30x30x19_0-1_(20).txt", 0.0005,C);
                             }
                             switch (typeT)
                             {
                                 case 1:
-                                    plast.InicializationTempature(300, alf);
+                                    plast.InicializationTempature(100, alf);
                                     break;
                                 case 2:
-                                    plast.InicializationTempature(400, alf);
+                                    plast.InicializationTempature(200, alf);
                                     break;
                                 case 3:
                                     //plast.InicializationTempature(0, 100, alf, 0.4); //z = -1 T = 300, z = 0 T = 800,
                                     plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/локальная_400_21x21_30x30x19_300-400_(20).txt", alf);
+                                    for (int x = 0; x < plast.T.GetLength(0); x++)
+                                        for (int y = 0; y < plast.T.GetLength(1); y++)
+                                            for (int z = 0; z < plast.T.GetLength(2); z++)
+                                                plast.T[x, y, z] = plast.T[x, y, z] - 200;
                                     break;
                                 case 4:
                                     //plast.InicializationTempature(100, 0, alf, 0.4); //z = -1 T = 800, z = 0 T = 300,
                                     plast.InicializationTempatureInversion("C:/Users/proto/Documents/GitHub/Plane1/локальная_400_21x21_30x30x19_300-400_(20).txt", alf);
+                                    for (int x = 0; x < plast.T.GetLength(0); x++)
+                                        for (int y = 0; y < plast.T.GetLength(1); y++)
+                                            for (int z = 0; z < plast.T.GetLength(2); z++)
+                                                plast.T[x, y, z] = plast.T[x, y, z] - 200;
                                     break;
                                 case 5:
                                     plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/локальная_400_30_30_19.txt", alf); //30 30 7
+                                    break;
+                                case 6:
+                                    plast.InicializationTempature("C:/Users/proto/Documents/GitHub/Plane1/локальная_2_400_21x21_30x30x19_300-400_(20).txt", alf); 
                                     break;
                                 default: break;
                             }
@@ -1442,8 +1559,8 @@ namespace Decoder
                                             for (int k2 = 0; k2 < N; k2++)
                                                 granb[i2, k2] = plast.Eii[k2, 0, i2];
                                         WriteMassivInFile(granb, "granb 0", true);
-                                        MassivePointsFisicalNonlineary[2, bet] = Q * i;
-                                        MassivePointsFisicalNonlineary[3, bet] = plast.mW;
+                                        MassivePointsFisicalNonlineary[2, countb] = Q * i;
+                                        MassivePointsFisicalNonlineary[3, countb] = plast.mW;
                                     }
                                 }
                         }
@@ -1483,20 +1600,23 @@ namespace Decoder
                                             WriteMassivInFile(plast.Eii, 0, String.Format("EiiFN_{0}_", 0) + Form);
                                             WriteMassivInFile(plast.Eii, sloi, String.Format("EiiFN_{0}_", sloi) + Form);
                                             WriteMassivInFile(plast.Eii, P - 3, String.Format("EiiFN_{0}_", P - 3) + Form);
-                                            MassivePointsFisicalNonlineary[0, bet] = Q * i;
-                                            MassivePointsFisicalNonlineary[1, bet] = plast.mW;
+                                            MassivePointsFisicalNonlineary[0, countb] = Q * i;
+                                            MassivePointsFisicalNonlineary[1, countb] = plast.mW;
                                         }
                                     }
                                 }
                             }
                             
                         }
-                        MasiiveOfList[bet].Add(plast.mW);
+                        MasiiveOfList[countb].Add(plast.mW);
                         //условие выхода из цикла расчёта
                         if (plast.CountIterationPhisicalNoneleneary >= 1000 || plast.mW > 0.3 || (i != 0 && plast.mW == 0)) break;
-                        //RasspredDiform(plast.Eii, 2.25, "2.25");
                         
-                        plast.RELoad();
+                        //plast.ShowMassiv2(plast.W);
+                        //plast.ShowMassiv2(plast.IM);
+                        //plast.ShowMassiv3CentrR3(plast.Eii, 0);
+                        //plast.ShowMassiv3CentrR3(plast.Eii, 4);
+                        //plast.RELoad();
                     }
                 }
                 stopwatch.Stop();
@@ -1505,6 +1625,7 @@ namespace Decoder
 
                 Console.WriteLine(bet);
                 Thread.Sleep(1000);
+                countb++;
                 
             }
             WriteMassivInFile(MassivePointsFisicalNonlineary, "FuullFisicleNonlineary",false);

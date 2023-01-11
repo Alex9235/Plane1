@@ -495,7 +495,7 @@ namespace Decoder
             LoadCFULL(QWater1, QWater2,gamma);
             BezrazmernostbC();
         }
-        public void InicializationHumidity(String PathC, double bet)
+        public void InicializationHumidity(String PathC, double bet, double QC)
         {
             if (FlagСurvilinearPlane)
             {
@@ -513,7 +513,7 @@ namespace Decoder
             if (!FlagPorysotyProblem && !FlagGradientProblem)
                 LoadBetaFULL(bet);
 
-            LoadCFULL(PathC,0.1);
+            LoadCFULL(PathC,QC);
             //SymmetriInversionMassivCenterPlane(C);
             BezrazmernostbC();
         }

@@ -1854,6 +1854,11 @@ namespace Decoder
         }
         private double L6(double[] A1B1, double[] A2B2, int i, int j, bool AB, double[,] F)
         {
+            if (FlagHumidity)
+            {
+                Jd2x = (JM[i + 1, j] - 2 * JM[i, j] + JM[i - 1, j]) / (dx * dx);
+                Jd2y = (JM[i, j + 1] - 2 * JM[i, j] + JM[i, j - 1]) / (dy * dy);
+            }
             if (FlagTemperatureProblem)
             {
                 Id2x = (IM[i + 1, j] - 2 * IM[i, j] + IM[i - 1, j]) / (dx * dx);
@@ -1861,11 +1866,11 @@ namespace Decoder
             }
             if (AB)
             {
-                return A1B1[i + 1] * (Id2x + 2 * lam * lam * Id2y - F[i - 1, j - 1]);
+                return A1B1[i + 1] * (Id2x + lam * lam * Id2y + Jd2x + lam * lam * Jd2y - F[i - 1, j - 1]);
             }
             else
             {
-                return A1B1[j + 1] * (Id2x + 2 * lam * lam * Id2y - F[i - 1, j - 1]);
+                return A1B1[j + 1] * (Id2x + lam * lam * Id2y + Jd2x + lam * lam * Jd2y - F[i - 1, j - 1]);
             }
         }
 
